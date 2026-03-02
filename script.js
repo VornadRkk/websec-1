@@ -1,57 +1,69 @@
+const HISTORY_LIMIT = 5;
+const history = [];
+
 function calculate() {
   try {
-    const a = readNumber("num1");
-    const b = readNumber("num2");
-    const op = document.getElementById("operator").value;
+    const num1El = document.getElementById("num1");
+    const num2El = document.getElementById("num2");
+    const opEl = document.getElementById("operator");
+    const resultsBox = document.getElementById("results");
 
-    const value = compute(a, b, op);
-    const line = `${a} ${op} ${b} = ${value}`;
-
-    pushResult(document.getElementById("results"), line, 5);
-  } catch (e) {
-    alert(e.message);
-  }
-}
-
-function readNumber(id) {
-  const raw = document.getElementById(id).value.trim();
-  const n = Number(raw);
-
-  if (!Number.isFinite(n)) {
-    throw new Error("Ошибка! Введите корректные числа.");
-  }
-  return n;
-}
-
-function compute(x, y, op) {
-  const actions = {
-    "+": () => x + y,
-    "-": () => x - y,
-    "*": () => x * y,
-    "/": () => {
-      if (Math.abs(y) <= Number.EPSILON) {
-        throw new Error("Ошибка: Деление на ноль!");
-      }
-      return (x / y).toFixed(2);
+    if (!num1El || !num2El || !opEl || !resultsBox) {
+      throw new Error("Ошибка: не найден элемент интерфейса (num1/num2/operator/results).");
     }
-  };
 
-  const fn = actions[op];
-  if (!fn) throw new Error("Неизвестная операция.");
+    const num1 = Number(num1El.value.trim());
+    const num2 = Number(num2El.value.trim());
+    const operator = opEl.value;
 
-  return fn();
+    if (!Number.isFinite(num1) || !Number.isFinite(num2)) {
+      throw new Error("Ошибка! Введите корректные числа.");
+    }
+
+    let result;
+    switch (operator) {
+      case "+":
+        result = num1 + num2;
+        break;
+      case "-":
+        result = num1 - num2;
+        break;
+      case "*":
+        result = num1 * num2;
+        break;
+      case "/":
+        if (Math.abs(num2) <= Number.EPSILON) {
+          throw new Error("Ошибка: Деление на ноль!");
+        }
+        result = (num1 / num2).toFixed(2);
+        break;
+      default:
+        throw new Error("Неизвестная операция.");
+    }
+
+    addResult(`${num1} ${operator} ${num2} = ${result}`, resultsBox);
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
-function pushResult(box, text, limit) {
-  Array.from(box.querySelectorAll(".result-item")).forEach(el =>
-    el.classList.add("old-result")
-  );
-  const row = document.createElement("div");
-  row.className = "result-item";
-  row.innerHTML = `<strong>${text}</strong>`;
-  box.appendChild(row);
+function addResult(text, resultsBox) {
+  history.push(text);
 
-  while (box.children.length > limit) {
-    box.removeChild(box.firstElementChild);
+  if (history.length > HISTORY_LIMIT) {
+    history.splice(0, history.length - HISTORY_LIMIT);
   }
+
+  resultsBox.innerHTML = "";
+  history.forEach((line, idx) => {
+    const div = document.createElement("div");
+    div.className = "result-item";
+
+    if (idx !== history.length - 1) {
+      div.classList.add("old-result");
+    }
+
+    div.innerHTML = `<b>${line}</b>`;
+    resultsBox.appendChild(div);
+  });
 }
